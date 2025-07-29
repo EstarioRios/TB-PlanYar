@@ -21,6 +21,7 @@ class CustomUserManager(BaseUserManager):
             user.save(using=self._db)
         except ValueError as e:
             raise e
+        return user
 
     def create_admin(self, user_name=None, user_type="admin"):
         if not user_name:
@@ -33,6 +34,7 @@ class CustomUserManager(BaseUserManager):
             )
         except ValueError as e:
             raise e
+        return user
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
