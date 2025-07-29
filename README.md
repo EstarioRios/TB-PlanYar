@@ -20,17 +20,18 @@ This structure is perfect when:
 ---
 
 ## 📂 Project Structure
-
+```
 project_root/
 ├── AuthenticationSystem/ # Handles user models, login logic, internal user processing
 ├── BotCore/ # (Or TeleOps / TeloCore) — main logic of the bot's commands and actions
 ├── telegrambot.py # Telegram bot file interacting directly with Django endpoints
 ├── manage.py
 └── requirements.txt
-
-yaml
+```
+```yaml
 Copy
 Edit
+```
 
 ---
 
