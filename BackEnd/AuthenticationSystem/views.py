@@ -22,7 +22,7 @@ def create_user(request):
             {"error": "all fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if (check_exist_user(user_user_name)) == False:
+    if not (check_exist_user(user_user_name)):
         user = CustomUser.create_normal(user_name=user_user_name)
         user.save()
 
@@ -37,6 +37,6 @@ def create_admin(request):
             {"error": "all fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
         )
-    if (check_exist_user(user_user_name)) == False:
+    if not (check_exist_user(user_user_name)):
         user = CustomUser.create_admin(user_name=user_user_name)
         user.save()
