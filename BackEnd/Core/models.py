@@ -5,6 +5,10 @@ from AuthenticationSystem.models import CustomUser
 class Plan(models.Model):
     title = models.CharField(null=False, blank=False)
     description = models.TextField(null=True, blank=True)
+    STATUSES = [("active", "Active"), ("finished", "Finished")]
+    plan_status = models.CharField(
+        default="active", choices=STATUSES, blank=False, null=False
+    )
 
     def __str__(self):
         return f"{self.title}"
@@ -19,6 +23,13 @@ class UserPlan(models.Model):
         null=False,
         blank=False,
         related_name="actions",
+    )
+    STATUSES = [("active", "Active"), ("finished", "Finished")]
+    action_status = models.CharField(
+        choices=STATUSES,
+        default="active",
+        null=False,
+        blank=False,
     )
     plan = models.ForeignKey(
         Plan,

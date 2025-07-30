@@ -80,3 +80,98 @@ def create_plan(request):
         {"message": f"Plan '{plan_title}' created successfully!"},
         status=status.HTTP_201_CREATED,
     )
+
+
+@api_view(["GET"])
+def plan_details(request):
+    plan_id = request.quety_params.get(plan_id)
+    if not plan_id:
+        return Response(
+            {"error": "'plan_id' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        plan = Plan.objects.get(id=plan_id)
+    except Plan.DoesNotExist:
+        return Response(
+            {"error": f"Plan with id {plan_id} does not exist"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    users_data = []
+    for user_plan in plan.users.all():  # related_name="users"
+        users_data.append(
+            {
+                "user_name": user_plan.user.user_name,
+                "action_title": user_plan.action_title,
+                "action_description": user_plan.action_description,
+                "action_status": user_plan.action_status,
+            }
+        )
+
+    plan_data = {
+        "plan_id": plan.id,
+        "plan_title": plan.title,
+        "plan_description": plan.description,
+        "plan_status": plan.plan_status,
+        "users": users_data,
+    }
+
+    return Response(plan_data, status=status.HTTP_200_OK)
+
+
+@api_view(["PUT"])
+def finish_action(request):
+    user_plan_user_name = request.query_params.get("user_name")
+    plan_id = request.query_params.get("plan_id")
+
+    if not all([user_plan_user_name, plan_id]):
+        return Response(
+            {"error": "all fields are required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        plan = Plan.objects.get(id=plan_id)
+    except Plan.DoesNotExist:
+        return Response(
+            {"error": f"plan not found by id: {plan_id}"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        user = CustomUser.objects.get(user_name=user_plan_user_name)
+    except CustomUser.DoesNotExist:
+        return Response(
+            {"error": f"user not found by username:{user_plan_user_name}"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    plan_user = None
+    for up in plan.users.all():
+        if up.user == user:
+            plan_user = up
+            break
+
+    if not plan_user:
+        return Response(
+            {"error": f"user '{user_plan_user_name}' not found in plan '{plan_id}'"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    plan_user.action_status = "finished"
+    plan_user.save()
+
+    all_finished = all(up.action_status == "finished" for up in plan.users.all())
+
+    if all_finished:
+        plan.plan_status = "finished"
+        plan.save()
+
+    return Response(
+        {
+            "message": f"Action for user '{user_plan_user_name}' finished successfully!",
+            "plan_status": plan.plan_status,
+        },
+        status=status.HTTP_200_OK,
+    )
