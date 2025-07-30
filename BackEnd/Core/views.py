@@ -84,7 +84,7 @@ def create_plan(request):
 
 @api_view(["GET"])
 def plan_details(request):
-    plan_id = request.quety_params.get(plan_id)
+    plan_id = request.quety_params.get("plan_id")
     if not plan_id:
         return Response(
             {"error": "'plan_id' is required"},
@@ -157,6 +157,11 @@ def finish_action(request):
         return Response(
             {"error": f"user '{user_plan_user_name}' not found in plan '{plan_id}'"},
             status=status.HTTP_404_NOT_FOUND,
+        )
+    if plan_user.action_status == "finished":
+        return Response(
+            {"error": "'action_status' is 'finished' already"},
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     plan_user.action_status = "finished"

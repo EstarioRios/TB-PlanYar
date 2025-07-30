@@ -32,6 +32,8 @@ class CustomUserManager(BaseUserManager):
                 user_name=user_name,
                 user_type=user_type,
             )
+
+            user.save(using=self._db)
         except ValueError as e:
             raise e
         return user
@@ -75,8 +77,8 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         return self.get(user_name=user_name)
 
     objects = CustomUserManager()
-    USERNAME_FIELD = "id"
-    REQUIRED_FIELDS = ["first_name", "last_name"]
+    USERNAME_FIELD = "user_name"
+    REQUIRED_FIELDS = []
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
