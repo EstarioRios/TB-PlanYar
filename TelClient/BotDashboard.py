@@ -1,12 +1,10 @@
 from pyrogram import Client, filters
 from pyrogram.types import ReplyKeyboardMarkup
+from InfoManager import test_proxies_and_get_client
 
-app = Client(
-    "PlanYarBot",
-    api_id="YOUR_API_ID",
-    api_hash="YOUR_API_HASH",
-    bot_token="YOUR_BOT_TOKEN",
-)
+app = test_proxies_and_get_client()
+if (not app) or (app == None):
+    print("No proxies found")
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
     [["➕ افزودن به گروه", "📖 راهنمای کارکرد ربات"], ["👨‍💻 درباره توسعه دهنده"]],

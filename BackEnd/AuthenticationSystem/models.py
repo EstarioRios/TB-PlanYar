@@ -9,13 +9,13 @@ from django.contrib.auth.models import (
 
 
 class CustomUserManager(BaseUserManager):
-    def create_normal(self, user_name=None, user_type="normal"):
-        if not user_name:
-            raise ValueError("The 'user_name' is required")
+    def create_normal(self, id_code=None, user_type="normal"):
+        if not id_code:
+            raise ValueError("The 'id_code' is required")
 
         try:
             user = self.model(
-                user_name=user_name,
+                id_code=id_code,
                 user_type=user_type,
             )
             user.save(using=self._db)
@@ -23,13 +23,13 @@ class CustomUserManager(BaseUserManager):
             raise e
         return user
 
-    def create_admin(self, user_name=None, user_type="admin"):
-        if not user_name:
-            raise ValueError("The 'user_name' is required")
+    def create_admin(self, id_code=None, user_type="admin"):
+        if not id_code:
+            raise ValueError("The 'id_code' is required")
 
         try:
             user = self.model(
-                user_name=user_name,
+                id_code=id_code,
                 user_type=user_type,
             )
 
@@ -40,17 +40,17 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-
     USER_TYPES = [
         ("admin", "Admin"),
-        ("noramal", "Normal"),
+        ("normal", "Normal"),
     ]
 
-    user_name = models.CharField(
-        unique=True,
-        blank=False,
-        null=False,
-    )
+    # id_code = models.CharField(
+    #     unique=True,
+    #     blank=False,
+    #     null=False,
+    # )
+    id_code = models.BigIntegerField(unique=True, blank=False, null=False)
     user_type = models.CharField(
         max_length=50,
         choices=USER_TYPES,
@@ -73,12 +73,12 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         related_query_name="customuser",
     )
 
-    def get_by_natural_key(self, user_name):
-        return self.get(user_name=user_name)
+    def get_by_natural_key(self, id_code):
+        return self.get(id_code=id_code)
 
     objects = CustomUserManager()
-    USERNAME_FIELD = "user_name"
+    USERNAME_FIELD = "id_code"
     REQUIRED_FIELDS = []
 
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        return f"id_code: {self.id_code}"

@@ -1,5 +1,83 @@
 import os
 import json
+from imaplib import Flags
+
+import os
+import json
+import time
+import requests
+from pyrogram import Client
+
+
+def test_proxies_and_get_client(session_name="proxy_session"):
+    proxies_file = os.path.join(os.path.dirname(__file__), "proxies.json")
+    bot_info_file = os.path.join(os.path.dirname(__file__), "BotInfo.json")
+
+    if not os.path.exists(proxies_file) or not os.path.exists(bot_info_file):
+        return None
+
+    with open(bot_info_file, "r") as f:
+        bot_info = json.load(f)
+
+    api_id = bot_info.get("api_id")
+    api_hash = bot_info.get("api_hash")
+    bot_token = bot_info.get("token")
+
+    if not all([api_id, api_hash, bot_token]):
+        return None
+
+    with open(proxies_file, "r") as f:
+        proxies = json.load(f)
+        if not proxies or not isinstance(proxies, list):
+            return None
+
+    def test_proxy_speed(proxy):
+        try:
+            test_url = "https://core.telegram.org"
+            proxy_url = f"http://{proxy['hostName']}:{proxy['port']}"
+            test_proxies = {
+                "http": proxy_url,
+                "https": proxy_url,
+            }
+            start = time.time()
+            response = requests.get(test_url, proxies=test_proxies, timeout=5)
+            if response.status_code == 200:
+                return time.time() - start
+            else:
+                return float("inf")
+        except:
+            return float("inf")
+
+    best_proxy = None
+    best_time = float("inf")
+
+    for proxy in proxies:
+        duration = test_proxy_speed(proxy)
+        print(f"🔎 Proxy {proxy['hostName']}:{proxy['port']} → {duration:.2f} sec")
+        if duration < best_time:
+            best_time = duration
+            best_proxy = proxy
+
+    if not best_proxy:
+        print("❌ No working proxy found.")
+        return None
+
+    print(f"✅ Best Proxy: {best_proxy['hostName']}:{best_proxy['port']} in {best_time:.2f}s")
+
+    client = Client(
+        session_name,
+        api_id=api_id,
+        api_hash=api_hash,
+        bot_token=bot_token,
+        proxy={
+            "scheme": "mtproto",
+            "hostname": best_proxy["hostName"],
+            "port": best_proxy["port"],
+            "secret": best_proxy["secret"]
+        }
+    )
+
+    return client
 
 
 def addProxy(hostName, port, secret):
