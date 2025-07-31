@@ -52,5 +52,11 @@ def about_dev_handler(client, message):
     message.reply_text(about_text)
 
 
+@app.on_message(filters.command("menu") & filters.private)
+def menu_handler(client, message):
+    welcome_text = "این هم از منوی اصلی:"
+    message.reply_text(welcome_text, reply_markup=MAIN_KEYBOARD)
+
+
 if __name__ == "__main__":
     app.run()
