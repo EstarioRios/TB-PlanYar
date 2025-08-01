@@ -1,9 +1,10 @@
 from pyrogram import Client, filters
 from pyrogram.types import ReplyKeyboardMarkup
 from InfoManager import test_proxies_and_get_client
+from ChatDashboard import setup_group_handlers
 
 app = test_proxies_and_get_client()
-if (not app) or (app == None):
+if not app:
     print("No proxies found")
 
 MAIN_KEYBOARD = ReplyKeyboardMarkup(
@@ -12,6 +13,9 @@ MAIN_KEYBOARD = ReplyKeyboardMarkup(
 )
 
 START_GROUP_LINK = "https://t.me/PlanYarBot?startgroup=add"
+
+# دقت کن اینجا API_BASE_URL در ChatDashboard.py به /core/api تنظیم شده است
+setup_group_handlers(app)
 
 
 @app.on_message(filters.command("start") & filters.private)
@@ -55,7 +59,6 @@ def about_dev_handler(client, message):
         "📢 فرصت تبلیغات ویژه برای برندها و کسب‌وکارها از طریق ربات فراهم است.\n"
         "اگر تمایل به همکاری یا حمایت دارید، خوشحال می‌شوم از شما بشنوم!"
     )
-
     message.reply_text(about_text)
 
 

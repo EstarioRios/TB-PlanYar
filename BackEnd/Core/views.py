@@ -3,7 +3,11 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 
 from AuthenticationSystem.models import CustomUser
-from .models import Plan, UserPlan
+from .models import (
+    Plan,
+    UserPlan,
+    ChatGroup,
+)
 import json
 
 
@@ -12,30 +16,57 @@ def create_plan(request):
     plan_title = request.data.get("title")
     plan_description = request.data.get("description")
     plan_users = request.data.get("users")
-    creator_user_name = request.data.get("creator_user_name")
+    creator_id_code = request.data.get("creator_id_code")
+    chat_group_id_code = request.data.get("chat_group_id_code")
 
-    if not all([plan_title, plan_description, plan_users, creator_user_name]):
+    if not all(
+        [
+            plan_title,
+            plan_description,
+            plan_users,
+            creator_id_code,
+            chat_group_id_code,
+        ]
+    ):
         return Response(
-            {"error": "all fields are required"},
+            {"error": "All fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     try:
-        creator_user = CustomUser.objects.get(user_name=creator_user_name)
-        if bool(creator_user.is_admin) != True:
+        creator_user = CustomUser.objects.get(id_code=creator_id_code)
+        if not creator_user.is_admin:
             return Response(
-                {"error": "you are not allowed"},
+                {"error": "You are not allowed to create a plan"},
                 status=status.HTTP_403_FORBIDDEN,
             )
     except CustomUser.DoesNotExist:
         return Response(
-            {"error": f"there isn't 'creator_user' by user_name:{creator_user_name}"},
+            {"error": f"No user found with id_code: {creator_id_code}"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        chat_group, created = ChatGroup.objects.get_or_create(
+            id_code=chat_group_id_code
+        )
+    except Exception as e:
+        return Response(
+            {"error": f"Error getting/creating chat group: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )
+
+    if hasattr(chat_group, "plans"):
+        return Response(
+            {"error": "A plan already exists for this group"},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
     plan = Plan.objects.create(
+        chat_group=chat_group,
         title=plan_title,
         description=plan_description,
+        created_by=creator_user,
     )
 
     if isinstance(plan_users, str):
@@ -44,30 +75,20 @@ def create_plan(request):
         plan_users_data = plan_users
 
     for user_key, user_data in plan_users_data.items():
-        user_name = user_data.get("user_name")
+        id_code = user_data.get("id_code")
         action_title = user_data.get("action_title")
         action_description = user_data.get("action_description")
 
-        if not user_name:
+        if not id_code or not action_title or not action_description:
             return Response(
-                {"error": f"user_name missing in {user_key}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        elif not action_title:
-            return Response(
-                {"error": f"action_title missing in {user_key}"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        elif not action_description:
-            return Response(
-                {"error": f"action_description missing in {user_key}"},
+                {"error": f"Missing data in user: {user_key}"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
         try:
-            user = CustomUser.objects.get(user_name=user_name)
+            user = CustomUser.objects.get(id_code=id_code)
         except CustomUser.DoesNotExist:
-            user = CustomUser.objects.create_normal(user_name=user_name)
+            user = CustomUser.objects.create_normal(id_code=id_code)
 
         UserPlan.objects.create(
             user=user,
@@ -77,7 +98,9 @@ def create_plan(request):
         )
 
     return Response(
-        {"message": f"Plan '{plan_title}' created successfully!"},
+        {
+            "message": f"Plan '{plan_title}' created successfully for group {chat_group_id_code}"
+        },
         status=status.HTTP_201_CREATED,
     )
 
@@ -102,7 +125,7 @@ def plan_details(request):
     for user_plan in plan.users.all():  # related_name="users"
         users_data.append(
             {
-                "user_name": user_plan.user.user_name,
+                "id_code": user_plan.user.id_code,
                 "action_title": user_plan.action_title,
                 "action_description": user_plan.action_description,
                 "action_status": user_plan.action_status,
@@ -113,6 +136,7 @@ def plan_details(request):
         "plan_id": plan.id,
         "plan_title": plan.title,
         "plan_description": plan.description,
+        "plan_creator": plan.created_by,
         "plan_status": plan.plan_status,
         "users": users_data,
     }
@@ -122,10 +146,10 @@ def plan_details(request):
 
 @api_view(["PUT"])
 def finish_action(request):
-    user_plan_user_name = request.query_params.get("user_name")
+    user_plan_id_code = request.query_params.get("id_code")
     plan_id = request.query_params.get("plan_id")
 
-    if not all([user_plan_user_name, plan_id]):
+    if not all([user_plan_id_code, plan_id]):
         return Response(
             {"error": "all fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -140,10 +164,10 @@ def finish_action(request):
         )
 
     try:
-        user = CustomUser.objects.get(user_name=user_plan_user_name)
+        user = CustomUser.objects.get(id_code=user_plan_id_code)
     except CustomUser.DoesNotExist:
         return Response(
-            {"error": f"user not found by username:{user_plan_user_name}"},
+            {"error": f"user not found by username:{user_plan_id_code}"},
             status=status.HTTP_404_NOT_FOUND,
         )
 
@@ -155,7 +179,7 @@ def finish_action(request):
 
     if not plan_user:
         return Response(
-            {"error": f"user '{user_plan_user_name}' not found in plan '{plan_id}'"},
+            {"error": f"user '{user_plan_id_code}' not found in plan '{plan_id}'"},
             status=status.HTTP_404_NOT_FOUND,
         )
     if plan_user.action_status == "finished":
@@ -175,8 +199,72 @@ def finish_action(request):
 
     return Response(
         {
-            "message": f"Action for user '{user_plan_user_name}' finished successfully!",
+            "message": f"Action for user '{user_plan_id_code}' finished successfully!",
             "plan_status": plan.plan_status,
         },
+        status=status.HTTP_200_OK,
+    )
+
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
+from .models import ChatGroup, Plan
+
+
+@api_view(["GET"])
+def get_plan_by_group_id_code(request):
+    chat_group_id_code = request.query_params.get("chat_group_id_code")
+
+    if not chat_group_id_code:
+        return Response(
+            {"error": "'chat_group_id_code' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        chat_group = ChatGroup.objects.get(id_code=chat_group_id_code)
+    except ChatGroup.DoesNotExist:
+        return Response(
+            {"error": f"No ChatGroup found with id_code: {chat_group_id_code}"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    try:
+        plan = chat_group.plans  # related_name='plans' in OneToOneField
+    except Plan.DoesNotExist:
+        return Response(
+            {"error": "No plan exists for this chat group"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    return Response(
+        {"plan_id": plan.id},
+        status=status.HTTP_200_OK,
+    )
+
+
+@api_view(["DELETE"])
+def delete_plan(request):
+    plan_id = request.query_params.get("plan_id")
+
+    if not plan_id:
+        return Response(
+            {"error": "'plan_id' is required"},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        plan = Plan.objects.get(id=plan_id)
+    except Plan.DoesNotExist:
+        return Response(
+            {"error": f"Plan with id {plan_id} does not exist"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
+
+    plan.delete()
+
+    return Response(
+        {"message": f"Plan with id {plan_id} deleted successfully"},
         status=status.HTTP_200_OK,
     )
