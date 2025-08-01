@@ -245,7 +245,7 @@ while True:
     print("=================================================")
     print("Hello, which of these do you want to do?")
     q1 = input(
-        "Add Proxy-1 / Submit Bot Information-2 / See Bot Information-3 / Exit-4 / Add from List-5 / Clear Proxies (1/2/3/4/5/6): "
+        "Add Proxy-1 / Submit Bot Information-2 / See Bot Information-3 / Exit-4 / Add from List-5 / Clear Proxies-6 (1/2/3/4/5/6): "
     )
 
     if q1 == "1":
