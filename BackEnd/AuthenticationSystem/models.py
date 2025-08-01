@@ -9,28 +9,28 @@ from django.contrib.auth.models import (
 
 
 class CustomUserManager(BaseUserManager):
-    def create_normal(self, id_code=None, user_type="normal"):
+    def create_normal(self, id_code=None, is_admin= False):
         if not id_code:
             raise ValueError("The 'id_code' is required")
 
         try:
             user = self.model(
                 id_code=id_code,
-                user_type=user_type,
+                is_admin=is_admin,
             )
             user.save(using=self._db)
         except ValueError as e:
             raise e
         return user
 
-    def create_admin(self, id_code=None, user_type="admin"):
+    def create_admin(self, id_code=None, is_admin=True):
         if not id_code:
             raise ValueError("The 'id_code' is required")
 
         try:
             user = self.model(
                 id_code=id_code,
-                user_type=user_type,
+                is_admin=is_admin,
             )
 
             user.save(using=self._db)
@@ -40,10 +40,6 @@ class CustomUserManager(BaseUserManager):
 
 
 class CustomUser(AbstractBaseUser, PermissionsMixin):
-    USER_TYPES = [
-        ("admin", "Admin"),
-        ("normal", "Normal"),
-    ]
 
     # id_code = models.CharField(
     #     unique=True,
@@ -51,11 +47,7 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     #     null=False,
     # )
     id_code = models.BigIntegerField(unique=True, blank=False, null=False)
-    user_type = models.CharField(
-        max_length=50,
-        choices=USER_TYPES,
-        default="normal",
-    )
+    is_admin = models.BooleanField(default=False, null=False, blank=False)
     groups = models.ManyToManyField(
         Group,
         verbose_name="groups",

@@ -22,7 +22,7 @@ def create_plan(request):
 
     try:
         creator_user = CustomUser.objects.get(user_name=creator_user_name)
-        if str(creator_user.user_type) != "admin":
+        if bool(creator_user.is_admin) != True:
             return Response(
                 {"error": "you are not allowed"},
                 status=status.HTTP_403_FORBIDDEN,

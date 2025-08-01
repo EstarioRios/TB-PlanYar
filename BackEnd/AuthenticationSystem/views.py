@@ -14,10 +14,10 @@ def check_exist_user(user_name):
 
 @api_view(["POST"])
 def create_user(request):
-    user_user_type = request.data.get("user_type")
+    user_is_admin = request.data.get("is_admin")
     user_user_name = request.data.get("user_name")
 
-    if not all([user_user_name, user_user_type]):
+    if not all([user_user_name, user_is_admin]):
         return Response(
             {"error": "all fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
@@ -29,10 +29,10 @@ def create_user(request):
 
 @api_view(["POST"])
 def create_admin(request):
-    user_user_type = request.data.get("user_type")
+    user_is_admin = request.data.get("is_admin")
     user_user_name = request.data.get("user_name")
 
-    if not all([user_user_name, user_user_type]):
+    if not all([user_user_name, user_is_admin]):
         return Response(
             {"error": "all fields are required"},
             status=status.HTTP_400_BAD_REQUEST,
