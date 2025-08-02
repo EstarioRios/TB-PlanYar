@@ -38,7 +38,7 @@ Edit
 ## ⚙️ Technologies Used
 
 - 🐍 Python 3.x
-- 🧱 Django (no DRF needed)
+- 🧱 Django (DRF needed)
 - 📡 python-telegram-bot (or Telethon / Aiogram — depending on your preference)
 - 🐧 Localhost / Linux-first development
 
