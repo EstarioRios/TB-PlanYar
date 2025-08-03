@@ -56,11 +56,11 @@ def create_plan(request):
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
 
-    if hasattr(chat_group, "plans"):
-        return Response(
-            {"error": "A plan already exists for this group"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    # if hasattr(chat_group, "plans"):
+    #     return Response(
+    #         {"error": "A plan already exists for this group"},
+    #         status=status.HTTP_400_BAD_REQUEST,
+    #     )
 
     plan = Plan.objects.create(
         chat_group=chat_group,

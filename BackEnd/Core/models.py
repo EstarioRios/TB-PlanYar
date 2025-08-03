@@ -11,9 +11,18 @@ class ChatGroup(models.Model):
 
 
 class Plan(models.Model):
-    chat_group = models.OneToOneField(
-        ChatGroup, on_delete=models.CASCADE, related_name="plans"
+    # chat_group = models.OneToOneField(
+    #     ChatGroup, on_delete=models.CASCADE, related_name="plans"
+    # )
+
+    chat_group = models.ForeignKey(
+        ChatGroup,
+        on_delete=models.CASCADE,
+        related_name="plans",
+        null=False,
+        blank=False,
     )
+
     title = models.CharField(null=False, blank=False)
     description = models.TextField(null=True, blank=True)
     STATUSES = [("active", "Active"), ("finished", "Finished")]
